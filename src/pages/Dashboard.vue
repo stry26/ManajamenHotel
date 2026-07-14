@@ -348,50 +348,19 @@
 </template>
 
 <script>
-// ── DUMMY DATA (mirrored from seed.js, extended for current month) ──────────
-const TODAY = new Date()
-const Y = TODAY.getFullYear()
-const M = TODAY.getMonth() // 0-indexed
-
-function d(y, m, day) { return new Date(y, m, day) }
-
-const DUMMY_KAMAR = [
-  { id: 'k1',  nomor: '101', tipe: 'Standard', harga: 300000, status: 'Terisi' },
-  { id: 'k2',  nomor: '102', tipe: 'Deluxe',   harga: 500000, status: 'Terisi' },
-  { id: 'k3',  nomor: '103', tipe: 'Standard', harga: 300000, status: 'Terisi' },
-  { id: 'k4',  nomor: '104', tipe: 'Deluxe',   harga: 500000, status: 'Kosong' },
-  { id: 'k5',  nomor: '105', tipe: 'Standard', harga: 300000, status: 'Kosong' },
-  { id: 'k6',  nomor: '106', tipe: 'Deluxe',   harga: 500000, status: 'Kosong' },
-  { id: 'k7',  nomor: '107', tipe: 'Standard', harga: 300000, status: 'Kosong' },
-  { id: 'k8',  nomor: '108', tipe: 'Suite',    harga: 900000, status: 'Kosong' },
-  { id: 'k9',  nomor: '109', tipe: 'Standard', harga: 300000, status: 'Kosong' },
-  { id: 'k10', nomor: '110', tipe: 'Deluxe',   harga: 500000, status: 'Kosong' },
-]
-
-const DUMMY_RESERVASI = [
-  // Dari seed.js (Agustus 2026)
-  { id: 'r1', nama_tamu: 'Budi Santoso',  nomor_kamar: '101', tipe: 'Standard', harga: 300000, tanggal_checkin: new Date(2026,7,1),  tanggal_checkout: new Date(2026,7,3),  status: 'Check In' },
-  { id: 'r2', nama_tamu: 'Siti Aminah',   nomor_kamar: '102', tipe: 'Deluxe',   harga: 500000, tanggal_checkin: new Date(2026,7,2),  tanggal_checkout: new Date(2026,7,5),  status: 'Check In' },
-  { id: 'r3', nama_tamu: 'Andi Wijaya',   nomor_kamar: '103', tipe: 'Standard', harga: 300000, tanggal_checkin: new Date(2026,7,4),  tanggal_checkout: new Date(2026,7,6),  status: 'Check In' },
-  // Bulan ini (dinamis)
-  { id: 'r4', nama_tamu: 'Dewi Lestari',  nomor_kamar: '104', tipe: 'Deluxe',   harga: 500000, tanggal_checkin: d(Y,M,3),  tanggal_checkout: d(Y,M,6),  status: 'Check In' },
-  { id: 'r5', nama_tamu: 'Rudi Hartono',  nomor_kamar: '105', tipe: 'Standard', harga: 300000, tanggal_checkin: d(Y,M,7),  tanggal_checkout: d(Y,M,10), status: 'Check In' },
-  { id: 'r6', nama_tamu: 'Mega Putri',    nomor_kamar: '108', tipe: 'Suite',    harga: 900000, tanggal_checkin: d(Y,M,10), tanggal_checkout: d(Y,M,14), status: 'Check In' },
-  { id: 'r7', nama_tamu: 'Hendra Kusuma', nomor_kamar: '106', tipe: 'Deluxe',   harga: 500000, tanggal_checkin: d(Y,M,14), tanggal_checkout: d(Y,M,16), status: 'Check In' },
-  { id: 'r8', nama_tamu: 'Rina Wahyuni',  nomor_kamar: '102', tipe: 'Deluxe',   harga: 500000, tanggal_checkin: d(Y,M,TODAY.getDate()), tanggal_checkout: d(Y,M,TODAY.getDate()+2), status: 'Check In' },
-  { id: 'r9', nama_tamu: 'Budi Santoso',  nomor_kamar: '109', tipe: 'Standard', harga: 300000, tanggal_checkin: d(Y,M,TODAY.getDate()-1), tanggal_checkout: d(Y,M,TODAY.getDate()+1), status: 'Check In' },
-]
+import api from '../services/api';
 
 export default {
   name: 'Dashboard',
   data() {
     const now = new Date()
     return {
-      loading: false,
-      // Stats (dihitung dari dummy)
+      loading: true,
+      // Stats dari API
       stats: {},
-      allReservasi: DUMMY_RESERVASI,
-      allKamar: DUMMY_KAMAR,
+      totalTamu: 0,
+      allReservasi: [],
+      allKamar: [],
       // Calendar state
       calendarYear: now.getFullYear(),
       calendarMonth: now.getMonth(), // 0-indexed
@@ -412,10 +381,11 @@ export default {
       return Math.round((this.allKamar.filter(k => k.status === 'Terisi').length / total) * 100)
     },
     statCards() {
+      const maxKamar = this.allKamar.length || 1
       return [
         { key: 'kamar', label: 'Total Kamar', value: this.allKamar.length, hint: 'Keseluruhan kamar hotel', color: 'purple', icon: 'fa-solid fa-bed', pct: '100%' },
-        { key: 'tamu',  label: 'Total Tamu',  value: 5,                    hint: 'Tamu terdaftar',          color: 'emerald', icon: 'fa-solid fa-users', pct: '70%' },
-        { key: 'res',   label: 'Total Reservasi', value: this.allReservasi.length, hint: 'Reservasi tercatat', color: 'sky', icon: 'fa-solid fa-calendar-check', pct: '55%' },
+        { key: 'tamu',  label: 'Total Tamu',  value: this.totalTamu,        hint: 'Tamu terdaftar',          color: 'emerald', icon: 'fa-solid fa-users', pct: Math.min(Math.round((this.totalTamu/maxKamar)*100), 100) + '%' },
+        { key: 'res',   label: 'Total Reservasi', value: this.allReservasi.length, hint: 'Reservasi tercatat', color: 'sky', icon: 'fa-solid fa-calendar-check', pct: Math.min(Math.round((this.allReservasi.length/maxKamar)*100), 100) + '%' },
       ]
     },
     // ── Kamar tabs ───────────────────────────
@@ -471,14 +441,23 @@ export default {
       return this.getEventsForDate(this.selectedDate)
     },
   },
-  mounted() {
-    // Compute stats from dummy
-    this.stats = {
-      total_kamar: this.allKamar.length,
-      total_tamu: 5,
-      total_reservasi: this.allReservasi.length,
-      kamar_kosong: this.allKamar.filter(k => k.status === 'Kosong').length,
-      kamar_terisi: this.allKamar.filter(k => k.status === 'Terisi').length,
+  async mounted() {
+    this.loading = true
+    try {
+      const [resDashboard, resKamar, resReservasi] = await Promise.all([
+        api.get('/dashboard'),
+        api.get('/kamar'),
+        api.get('/reservasi')
+      ])
+      this.stats       = resDashboard.data
+      this.totalTamu   = resDashboard.data.total_tamu
+      this.allKamar    = resKamar.data
+      this.allReservasi = resReservasi.data
+    } catch (err) {
+      console.error('Gagal memuat dashboard:', err)
+      this.$swal.fire('Error', 'Gagal memuat data dashboard', 'error')
+    } finally {
+      this.loading = false
     }
   },
   methods: {
