@@ -29,6 +29,8 @@ export const getSemuaReservasi = async (req, res) => {
             {
                 $project: {
                     _id: 1,
+                    id_tamu: 1,
+                    id_kamar: 1,
                     nama_tamu: '$tamu_info.nama',
                     nomor_kamar: '$kamar_info.nomor',
                     tipe: '$kamar_info.tipe',
@@ -78,8 +80,31 @@ export const tambahReservasi = async (req, res) => {
 
 export const updateReservasi = async (req, res) => {
     try {
+        const oldReservasi = await Reservasi.findById(req.params.id);
+        if (!oldReservasi) return res.status(404).json({ message: 'Reservasi tidak ditemukan' });
+
+        const oldKamarId = oldReservasi.id_kamar.toString();
+        const newKamarId = req.body.id_kamar ? req.body.id_kamar.toString() : oldKamarId;
+        const newStatus = req.body.status || oldReservasi.status;
+
         const reservasi = await Reservasi.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!reservasi) return res.status(404).json({ message: 'Reservasi tidak ditemukan' });
+
+        if (oldKamarId !== newKamarId) {
+            await Kamar.findByIdAndUpdate(oldKamarId, { status: 'Kosong' });
+            if (newStatus === 'Check In') {
+                await Kamar.findByIdAndUpdate(newKamarId, { status: 'Terisi' });
+            } else {
+                await Kamar.findByIdAndUpdate(newKamarId, { status: 'Kosong' });
+            }
+        } else {
+            if (newStatus === 'Check Out') {
+                await Kamar.findByIdAndUpdate(newKamarId, { status: 'Kosong' });
+            } else if (newStatus === 'Check In') {
+                await Kamar.findByIdAndUpdate(newKamarId, { status: 'Terisi' });
+            }
+        }
+
         res.json(reservasi);
     } catch (error) {
         res.status(400).json({ message: error.message });
