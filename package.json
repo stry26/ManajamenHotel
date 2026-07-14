@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "build": "vite build",
     "backend": "node server.js",
     "frontend": "vite",
     "seed": "node seed.js"
