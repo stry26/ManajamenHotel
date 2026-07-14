@@ -1,0 +1,28 @@
+{
+  "name": "projekakhir",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "node server.js",
+    "frontend": "vite",
+    "seed": "node seed.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "bootstrap": "^5.3.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0",
+    "sweetalert2": "^11.7.0",
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.4",
+    "vue-sweetalert2": "^3.0.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.3.4",
+    "concurrently": "^8.2.1",
+    "vite": "^4.4.9"
+  }
+}
